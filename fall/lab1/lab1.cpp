@@ -109,16 +109,16 @@ void all_to_one()
       } else {
         MPI_Request reqs;
         MPI_Status s1, s2;
-        MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &s1);
+        MPI_Probe(MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &s1);
         int src = s1.MPI_SOURCE;
-        MPI_Irecv(rbuf + src * nbytes, count, MPI_CHAR, src, 0, MPI_COMM_WORLD, &reqs);
+        MPI_Irecv(rbuf + src * nbytes, count, MPI_CHAR, src, 1, MPI_COMM_WORLD, &reqs);
         MPI_Wait(&reqs, &s2);
       }
     }
   } else {
     MPI_Request reqs;
     MPI_Status s;
-    MPI_Isend(sbuf, count, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &reqs);
+    MPI_Isend(sbuf, count, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &reqs);
     MPI_Wait(&reqs, &s);
   }
 
@@ -162,7 +162,7 @@ void all_to_all()
 
   t = MPI_Wtime() - t;
   double time_global;
-  MPI_Reduce(&t, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&t, &time_global, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if (rank == 0)
     cout << "time: " << time_global << endl;
@@ -178,8 +178,8 @@ int main(int argc, char **argv)
   MPI_Init(&argc, &argv);
   //ring();
   //one_to_all();
-  //all_to_one();
-  all_to_all();
+  all_to_one();
+  //all_to_all();
   MPI_Finalize();
 
   return 0;
