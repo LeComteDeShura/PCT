@@ -28,9 +28,6 @@ void ring()
 
     MPI_Waitall(2, reqs, s);
 
-    // cout << "send_to: " << right << endl;
-    // cout << "recieve_from: " << left << endl;
-
     char *p = sbuf;
     sbuf = rbuf;
     rbuf = p;
@@ -38,10 +35,13 @@ void ring()
   t = MPI_Wtime() - t;
 
   double time_global;
-  MPI_Reduce(&t, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  cout << t << endl;
+  MPI_Reduce(&t, &time_global, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-  if (rank == 0)
+  if (rank == 0) {
+    cout << "commsize: " << commsize << endl;
     cout << "time: " << time_global << endl;
+  }
 
   delete sbuf;
   delete rbuf;
@@ -77,10 +77,12 @@ void one_to_all()
 
   t = MPI_Wtime() - t;
   double time_global;
-  MPI_Reduce(&t, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&t, &time_global, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-  if (rank == 0)
+  if (rank == 0) {
+    cout << "commsize: " << commsize << endl;
     cout << "time: " << time_global << endl;
+  }
 
   delete sbuf;
   delete rbuf;
@@ -124,10 +126,12 @@ void all_to_one()
 
   t = MPI_Wtime() - t;
   double time_global;
-  MPI_Reduce(&t, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&t, &time_global, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-  if (rank == 0)
+  if (rank == 0) {
+    cout << "commsize: " << commsize << endl;
     cout << "time: " << time_global << endl;
+  }
 
   delete sbuf;
   delete rbuf;
@@ -164,8 +168,10 @@ void all_to_all()
   double time_global;
   MPI_Reduce(&t, &time_global, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-  if (rank == 0)
+  if (rank == 0) {
+    cout << "commsize: " << commsize << endl;
     cout << "time: " << time_global << endl;
+  }
 
   delete sbuf;
   delete rbuf;
@@ -176,9 +182,9 @@ void all_to_all()
 int main(int argc, char **argv)
 {
   MPI_Init(&argc, &argv);
-  //ring();
+  ring();
   //one_to_all();
-  all_to_one();
+  //all_to_one();
   //all_to_all();
   MPI_Finalize();
 
