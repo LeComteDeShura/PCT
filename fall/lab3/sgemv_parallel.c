@@ -47,17 +47,19 @@ void dgemv(float *a, float *b, float *c, int m, int n)
   int *rcounts = malloc(sizeof(*rcounts) * commsize);
 
   for (int i = 0; i < commsize; i++) {
-    rcounts[i] = (i == commsize - 1) ? m - i * nrows : nrows;
+    int l, u;
+    get_chunk(0, m - 1, commsize, i, &l, &u);
+    rcounts[i] = u - l + 1;
     displs[i] = (i > 0) ? displs[i - 1] + rcounts[i - 1] : 0;
   }
-  MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DOUBLE, c, rcounts, displs, MPI_DOUBLE, MPI_COMM_WORLD);
+  MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_FLOAT, c, rcounts, displs, MPI_FLOAT, MPI_COMM_WORLD);
 }
 
 
 int main(int argc, char **argv)
 {
   int commsize, rank;
-  int m = 18000, n = 18000;
+  int m = 28000, n = 28000;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &commsize);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
