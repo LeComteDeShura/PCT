@@ -26,7 +26,7 @@ void dgemv(float *a, float *b, float *c, int m, int n)
 
 int main(int argc, char **argv)
 {
-  int m = 18000, n = 18000;
+  int m = 9000, n = 9000;
   double t = wtime();
 
   float *a = malloc(sizeof(*a) * m * n);
