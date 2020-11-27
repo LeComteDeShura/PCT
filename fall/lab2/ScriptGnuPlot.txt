@@ -3,18 +3,21 @@ set terminal png size 1920,1080 enhanced font 'Arial, 16'
 set output 'runge.png'
 
 set style line 1 linecolor rgb 'red' linetype 1 linewidth 2
+set style line 2 linecolor rgb 'green' linetype 1 linewidth 2
 
 set border linewidth 2
 set key top left
 set grid
 set mytics 1
-set format y "%.4f"
+set format y "%.2f"
 set xlabel "Processes"
 set format x "%3.0f"
 set ylabel "Speedup"
+set xtics 4
 set rmargin 4
 set tmargin 2
-plot "runge.dat" using 1:2 title "Runge" with linespoints ls 1
+plot "linear.dat" using 1:2 title "Linear speedup" with linespoints ls 1,\
+"runge.dat" using 1:2 title "Runge, eps = 1E-6" with linespoints ls 2
 
 
 
@@ -23,16 +26,20 @@ set terminal png size 1920,1080 enhanced font 'Arial, 16'
 set output 'mc.png'
 
 set style line 1 linecolor rgb 'red' linetype 1 linewidth 2
-set style line 2 linecolor rgb 'blue' linetype 1 linewidth 2
+set style line 2 linecolor rgb 'green' linetype 1 linewidth 2
+set style line 3 linecolor rgb 'blue' linetype 1 linewidth 2
 
 set border linewidth 2
 set key top left
 set grid
 set mytics 1
-set format y "%.4f"
+set format y "%.2f"
 set xlabel "Processes"
 set format x "%3.0f"
 set ylabel "Speedup"
 set rmargin 4
+set xtics 4
 set tmargin 2
-plot "mc.dat" using 1:2 title "Monte-Carlo" with linespoints ls 1
+plot "linear.dat" using 1:2 title "Linear speedup" with linespoints ls 1,\
+"mc_10^7.dat" using 1:2 title "n = 10^7" with linespoints ls 2,\
+"mc_10^8.dat" using 1:2 title "n = 10^8" with linespoints ls 3
