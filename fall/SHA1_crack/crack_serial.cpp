@@ -12,13 +12,11 @@ void PasswGenerate(char *symbols, int length, int *hash)
 {
   sort(symbols, symbols + length);
   unsigned char *digest = new unsigned char[SHA_DIGEST_LENGTH];
-  int PassQuantity = 0;
+  long int PassQuantity = 0;
 
   do {
     //cout << symbols << endl;
     SHA1((unsigned char *) symbols, length, digest);
-    //for (int i = 0; i < SHA_DIGEST_LENGTH; i++) printf("%02x", digest[i]);
-    //cout << endl;
     for (int i = 0, match_count = 0; i < SHA_DIGEST_LENGTH; i++) {
       if (hash[i] == digest[i]) match_count++;
       if (match_count == SHA_DIGEST_LENGTH) cout << "matched password: " << symbols << endl;

@@ -1,5 +1,5 @@
 #include <algorithm>
-//#include <mpi.h>
+#include <mpi.h>
 #include <openssl/sha.h>
 #include <iostream>
 #include <string.h>
@@ -8,7 +8,18 @@
 using namespace std;
 
 
-void ithPermutation(int *perm, const int n, int i)
+long int factorial(int number)
+{
+  long int fact = 1;
+
+  for (int i = 1; i <= number; i++)
+    fact *= i;
+
+  return fact;
+}
+
+
+void ithPermutation(int *perm, const int n, long int i)
 {
    int j, k = 0;
    int *fact = (int *)calloc(n, sizeof(int));
@@ -34,25 +45,53 @@ void ithPermutation(int *perm, const int n, int i)
 }
 
 
+void PasswGenerate_parallel(char *lb, char *ub, int length, int *hash)
+{
+  int commsize, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &commsize);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  unsigned char *digest = new unsigned char[SHA_DIGEST_LENGTH];
+  long int PassQuantity = 0;
+
+  do {
+    //cout << symbols << endl;
+    SHA1((unsigned char *) lb, length, digest);
+    for (int i = 0, match_count = 0; i < SHA_DIGEST_LENGTH; i++) {
+      if (hash[i] == digest[i]) match_count++;
+      if (match_count == SHA_DIGEST_LENGTH) cout << "matched password: " << lb << endl;
+    }
+    PassQuantity++;
+  } while (next_permutation(lb, lb + length) && (strcmp(lb, ub) != 0));
+
+  //cout << endl << "total passwords of " << rank << " process: " << PassQuantity << endl;
+  delete[] digest;
+}
+
 
 int main(int argc, char *argv[])
 {
-  // int commsize, rank;
-  // MPI_Init(&argc, &argv);
-  // MPI_Comm_size(MPI_COMM_WORLD, &commsize);
-  // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int commsize, rank;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &commsize);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if (argc != 3) {
-    cout << "Launch format: ./[program_name] [character set] [password length]" << endl;
+  if (argc != 4) {
+    cout << "Launch format: ./[program_name] [character set] [password length] [hash]" << endl;
     return 1;
   }
 
   int length = atoi(argv[2]);
+  long int total_passwords = factorial(length);
+
+  if (total_passwords < commsize) {
+    if (rank == 0) cout << "The number of processes must be more than the number of passwords" << endl;
+    return 1;
+  }
 
   char *buf = new char[SHA_DIGEST_LENGTH * 2];
+  strcpy(buf, argv[3]);
   int hash[SHA_DIGEST_LENGTH];
-  cout << "hash: ";
-  cin >> buf;
 
   char hash_part[2];
   for (int i = 0, j = 0; j < SHA_DIGEST_LENGTH * 2; i++, j += 2) {
@@ -61,35 +100,48 @@ int main(int argc, char *argv[])
     hash[i] = strtol(hash_part, NULL, 16);
   }
 
-  int *perm = new int[length];
-  char *symbols = new char[length];
+  int *perm_lb = new int[length];
+  int *perm_ub = new int[length];
   char *set_sorted = new char[length];
-  char *ub = new char[length];
-  strcpy(symbols, argv[1]);
+  char *lb_psw = new char[length];
+  char *ub_psw = new char[length];
+  lb_psw[length] = { 0 };
+  ub_psw[length] = { 0 };
+
+
   strcpy(set_sorted, argv[1]);
-
-  ithPermutation(perm, length, 698);
   sort(set_sorted, set_sorted + length);
+
+  long int items_per_proc = total_passwords / commsize;
+  long int lb = (rank > 0) ? rank * items_per_proc : 0;
+  long int ub = (rank + 1) * items_per_proc;
+  ithPermutation(perm_lb, length, lb);
+  ithPermutation(perm_ub, length, ub);
+
   for (int i = 0; i < length; i++)
-    ub[i] = set_sorted[perm[i]];
+    lb_psw[i] = set_sorted[perm_lb[i]];
 
-  cout << "ub: " << ub << endl;
+  for (int i = 0; i < length; i++)
+    ub_psw[i] = set_sorted[perm_ub[i]];
 
-  // for (int i = 0; i < length; i++)
-  //   cout << perm[i];
-  //
-  // cout << endl;
+  double t = MPI_Wtime();
+  PasswGenerate_parallel(lb_psw, ub_psw, length, hash);
+  t = MPI_Wtime() - t;
 
-  double t = clock();
+  double time_global;
+  MPI_Reduce(&t, &time_global, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  if (rank == 0) {
+    cout << "commsize: " << commsize << endl;
+    cout << "time: " << time_global << endl;
+  }
 
-  //PasswGenerate(symbols, length, hash);
-
-  t = (clock() - t) / CLOCKS_PER_SEC;
-  cout << "time: " << t << endl;
-
-  delete [] set_sorted;
-  delete [] perm;
   delete [] buf;
-  delete [] symbols;
+  delete [] perm_lb;
+  delete [] perm_ub;
+  delete [] set_sorted;
+  delete [] lb_psw;
+  delete [] ub_psw;
+
+  MPI_Finalize();
   return 0;
 }
