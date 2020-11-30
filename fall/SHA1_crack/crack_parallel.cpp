@@ -85,11 +85,12 @@ int main(int argc, char *argv[])
   long int total_passwords = factorial(length);
 
   if (total_passwords < commsize) {
-    if (rank == 0) cout << "The number of processes must be more than the number of passwords" << endl;
+    if (rank == 0) cout << "The number of processes must be not less than the number of passwords" << endl;
     return 1;
   }
 
-  char *buf = new char[SHA_DIGEST_LENGTH * 2];
+  int buf_size = SHA_DIGEST_LENGTH * 2 + 1;
+  char *buf = new char[buf_size];
   strcpy(buf, argv[3]);
   int hash[SHA_DIGEST_LENGTH];
 
@@ -100,13 +101,15 @@ int main(int argc, char *argv[])
     hash[i] = strtol(hash_part, NULL, 16);
   }
 
-  int *perm_lb = new int[length];
-  int *perm_ub = new int[length];
-  char *set_sorted = new char[length];
-  char *lb_psw = new char[length];
-  char *ub_psw = new char[length];
+  int passw_size = length + 1;
+  char *set_sorted = new char[passw_size];
+  char *lb_psw = new char[passw_size];
+  char *ub_psw = new char[passw_size];
+  set_sorted[length] = { 0 };
   lb_psw[length] = { 0 };
   ub_psw[length] = { 0 };
+  int perm_lb[length];
+  int perm_ub[length];
 
 
   strcpy(set_sorted, argv[1]);
@@ -136,8 +139,6 @@ int main(int argc, char *argv[])
   }
 
   delete [] buf;
-  delete [] perm_lb;
-  delete [] perm_ub;
   delete [] set_sorted;
   delete [] lb_psw;
   delete [] ub_psw;
