@@ -53,18 +53,25 @@ void PasswGenerate_parallel(char *lb, char *ub, int length, int *hash)
 
   unsigned char *digest = new unsigned char[SHA_DIGEST_LENGTH];
   long int PassQuantity = 0;
+  int collisions = 0;
+  int collisions_total = 0;
 
   do {
     //cout << symbols << endl;
     SHA1((unsigned char *) lb, length, digest);
     for (int i = 0, match_count = 0; i < SHA_DIGEST_LENGTH; i++) {
       if (hash[i] == digest[i]) match_count++;
-      if (match_count == SHA_DIGEST_LENGTH) cout << "matched password: " << lb << endl;
+      if (match_count == SHA_DIGEST_LENGTH) {
+        cout << "matched password: " << lb << endl;
+        collisions++;
+      }
     }
     PassQuantity++;
   } while (next_permutation(lb, lb + length) && (strcmp(lb, ub) != 0));
 
-  //cout << endl << "total passwords of " << rank << " process: " << PassQuantity << endl;
+  MPI_Reduce(&collisions, &collisions_total, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+  if (rank == 0) cout << endl << "total collisions: " << collisions_total << endl;
   delete[] digest;
 }
 
