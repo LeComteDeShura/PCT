@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+  double t = clock();
   int length = atoi(argv[2]);
 
   char *buf = new char[SHA_DIGEST_LENGTH * 2];
@@ -52,8 +53,6 @@ int main(int argc, char *argv[])
 
   char *symbols = new char[length];
   strcpy(symbols, argv[1]);
-
-  double t = clock();
 
   PasswGenerate(symbols, length, hash);
 

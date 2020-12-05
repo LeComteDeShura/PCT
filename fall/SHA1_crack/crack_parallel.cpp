@@ -83,6 +83,8 @@ int main(int argc, char *argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &commsize);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  double t = MPI_Wtime();
+
   if (argc != 4) {
     cout << "Launch format: ./[program_name] [character set] [password length] [hash]" << endl;
     return 1;
@@ -134,7 +136,6 @@ int main(int argc, char *argv[])
   for (int i = 0; i < length; i++)
     ub_psw[i] = set_sorted[perm_ub[i]];
 
-  double t = MPI_Wtime();
   PasswGenerate_parallel(lb_psw, ub_psw, length, hash);
   t = MPI_Wtime() - t;
 
