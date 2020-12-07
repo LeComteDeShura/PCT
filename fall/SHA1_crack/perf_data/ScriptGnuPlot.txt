@@ -13,13 +13,13 @@ set key top left
 set grid
 set mytics 1
 set format y "%.2f"
-set xlabel "Processes"
+set xlabel "Процессы"
 set format x "%3.0f"
-set ylabel "Speedup"
+set ylabel "Ускорение"
 set xtics 8
 set rmargin 4
 set tmargin 2
-plot "linear.dat" using 1:2 title "Linear speedup" with linespoints ls 1,\
+plot "linear.dat" using 1:2 title "Линейное ускорение" with linespoints ls 1,\
 "10.dat" using 1:2 title "n = 10" with linespoints ls 2,\
 "11.dat" using 1:2 title "n = 11" with linespoints ls 3,\
 "12.dat" using 1:2 title "n = 12" with linespoints ls 4,\
