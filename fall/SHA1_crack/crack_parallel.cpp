@@ -1,78 +1,122 @@
 #include <algorithm>
+#include <cmath>
 #include <mpi.h>
 #include <openssl/sha.h>
 #include <iostream>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 using namespace std;
 
 
-long int factorial(int number)
+char* itob(int num, char* buffer, int base)
 {
-  long int fact = 1;
+    if (!num)
+       return 0;
 
-  for (int i = 1; i <= number; i++)
-    fact *= i;
+    char res;
+    int i, LEN = strlen(buffer);
 
-  return fact;
+    if (num % base > 9) res = (char)(num % base - 10) + 'A';
+        else res = (char)(num % base) + '0';
+
+    for (i = LEN; i > -1; i--) buffer[i + 1] = buffer[i];
+    buffer[0] = res;
+
+    itob(num / base, buffer, base);
+
+    return buffer;
 }
 
 
-void ithPermutation(int *perm, const int n, long int i)
+void ithPermutation(int *perm, int set_length, int psw_length, int n)
 {
-   int j, k = 0;
-   int *fact = (int *)calloc(n, sizeof(int));
+  char num[80] = "";
+  itob(n, num, set_length);     // Перевод в систему счисления в основание мощности алфавита
 
-   // compute factorial numbers
-   fact[k] = 1;
-   while (++k < n) fact[k] = fact[k - 1] * k;
+  // Запись числа в perm
+  for (int i = 0; i < strlen(num); i++) {
+    char k = num[i];
+    if (num[i] >= 'A' && num[i] <= 'Z')
+      perm[i] = strtol(&k, NULL, 16);
+    else
+      perm[i] = strtol(&k, NULL, 10);
+  }
 
-   // compute factorial code
-   for (k = 0; k < n; ++k) {
-     perm[k] = i / fact[n - 1 - k];
-     i = i % fact[n - 1 - k];
-   }
+  // Сдвиг массива на strlen(num) элементов вправо, чтобы можно было записать незначащие нули
+  if (strlen(num) != psw_length) {
+    for (int i = psw_length, j = strlen(num); j >= 0; i--, j--)
+      perm[i] = perm[j];
+  }
 
-   // readjust values to obtain the permutation
-   // start from the end and check if preceding values are lower
-   for (k = n - 1; k > 0; --k)
-     for (j = k - 1; j >= 0; --j)
-       if (perm[j] <= perm[k])
-         perm[k]++;
+  // Добавления незначащих нулей, чтобы число было длины psw_length (110 -> 0110)
+  for (int i = 0; i < psw_length - strlen(num); i++)
+    perm[i] = 0;
 
-   free(fact);
+  for (int i = 0; i < psw_length; i++)
+    perm[i]++;
 }
 
 
-void PasswGenerate_parallel(char *lb, char *ub, int length, int *hash)
+bool NextSet(int *a, int n, int m)
+{
+  int j = m - 1;
+
+  while (j >= 0 && a[j] == n) j--;
+  if (j < 0) return false;
+
+  if (a[j] >= n) j--;
+  a[j]++;
+
+  if (j == m - 1) return true;
+
+  for (int k = j + 1; k < m; k++)
+    a[k] = 1;
+
+  return true;
+}
+
+
+void PasswGenerate_parallel(int *lb, int *ub, char *symbols, int set_length, int psw_length, int *hash)
 {
   int commsize, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &commsize);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  char *psw = new char[psw_length];
+  psw[psw_length] = '\0';
   unsigned char *digest = new unsigned char[SHA_DIGEST_LENGTH];
   long int PassQuantity = 0;
   int collisions = 0;
   int collisions_total = 0;
+  bool ub_reached = false;
 
   do {
-    //cout << symbols << endl;
-    SHA1((unsigned char *) lb, length, digest);
+    int match_count = 0;
+    for (int i = 0; i < psw_length; i++)
+      if (lb[i] == ub[i]) match_count++;
+
+    if (match_count == psw_length) ub_reached = true;
+
+    for (int i = 0; i < psw_length; i++) psw[i] = symbols[lb[i] - 1];
+    SHA1((unsigned char *) psw, psw_length, digest);
     for (int i = 0, match_count = 0; i < SHA_DIGEST_LENGTH; i++) {
       if (hash[i] == digest[i]) match_count++;
       if (match_count == SHA_DIGEST_LENGTH) {
-        cout << "matched password: " << lb << endl;
+        cout << "matched password: " << psw << endl;
         collisions++;
       }
     }
-    PassQuantity++;
-  } while (next_permutation(lb, lb + length) && (strcmp(lb, ub) != 0));
 
+    PassQuantity++;
+  } while (NextSet(lb, set_length, psw_length) && (ub_reached != true));
+
+  //cout << "Passw: " << PassQuantity << endl;
   MPI_Reduce(&collisions, &collisions_total, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if (rank == 0) cout << endl << "total collisions: " << collisions_total << endl;
-  delete[] digest;
+  delete [] psw;
+  delete [] digest;
 }
 
 
@@ -90,8 +134,10 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  int length = atoi(argv[2]);
-  long int total_passwords = factorial(length);
+  int set_length = strlen(argv[1]);
+  int psw_length = atoi(argv[2]);
+  long int total_passwords = pow(set_length, psw_length);
+
 
   if (total_passwords < commsize) {
     if (rank == 0) cout << "The number of processes must be not less than the number of passwords" << endl;
@@ -110,33 +156,23 @@ int main(int argc, char *argv[])
     hash[i] = strtol(hash_part, NULL, 16);
   }
 
-  int passw_size = length + 1;
-  char *set_sorted = new char[passw_size];
-  char *lb_psw = new char[passw_size];
-  char *ub_psw = new char[passw_size];
-  set_sorted[length] = { 0 };
-  lb_psw[length] = { 0 };
-  ub_psw[length] = { 0 };
-  int perm_lb[length];
-  int perm_ub[length];
+  int set_size = set_length + 1;
+  char *set_sorted = new char[set_size];
+  set_sorted[set_length] = { 0 };
+  int perm_lb[psw_length];
+  int perm_ub[psw_length];
 
 
   strcpy(set_sorted, argv[1]);
-  sort(set_sorted, set_sorted + length);
+  sort(set_sorted, set_sorted + set_length);
 
   long int items_per_proc = total_passwords / commsize;
   long int lb = (rank > 0) ? rank * items_per_proc : 0;
-  long int ub = (rank + 1) * items_per_proc;
-  ithPermutation(perm_lb, length, lb);
-  ithPermutation(perm_ub, length, ub);
+  long int ub = (rank == commsize - 1) ? (total_passwords - 1) : (lb + items_per_proc - 1);
+  ithPermutation(perm_lb, set_length, psw_length, lb);
+  ithPermutation(perm_ub, set_length, psw_length, ub);
 
-  for (int i = 0; i < length; i++)
-    lb_psw[i] = set_sorted[perm_lb[i]];
-
-  for (int i = 0; i < length; i++)
-    ub_psw[i] = set_sorted[perm_ub[i]];
-
-  PasswGenerate_parallel(lb_psw, ub_psw, length, hash);
+  PasswGenerate_parallel(perm_lb, perm_ub, argv[1], set_length, psw_length, hash);
   t = MPI_Wtime() - t;
 
   double time_global;
@@ -148,9 +184,7 @@ int main(int argc, char *argv[])
 
   delete [] buf;
   delete [] set_sorted;
-  delete [] lb_psw;
-  delete [] ub_psw;
-
+  
   MPI_Finalize();
   return 0;
 }

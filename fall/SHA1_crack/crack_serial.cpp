@@ -8,24 +8,49 @@
 using namespace std;
 
 
-void PasswGenerate(char *symbols, int length, int *hash)
+bool NextSet(int *a, int n, int m)
 {
-  sort(symbols, symbols + length);
+  int j = m - 1;
+
+  while (j >= 0 && a[j] == n) j--;
+  if (j < 0) return false;
+
+  if (a[j] >= n) j--;
+  a[j]++;
+
+  if (j == m - 1) return true;
+
+  for (int k = j + 1; k < m; k++)
+    a[k] = 1;
+
+  return true;
+}
+
+
+void PasswGenerate(char *symbols, int set_length, int psw_length, int *hash)
+{
+  sort(symbols, symbols + set_length);
   unsigned char *digest = new unsigned char[SHA_DIGEST_LENGTH];
+  int *a = new int[psw_length];
+  char *psw = new char[psw_length];
+
+  for (int i = 0; i < psw_length; i++) a[i] = 1;
   long int PassQuantity = 0;
 
   do {
-    //cout << symbols << endl;
-    SHA1((unsigned char *) symbols, length, digest);
+    for (int i = 0; i < psw_length; i++) psw[i] = symbols[a[i] - 1];
+    SHA1((unsigned char *) psw, psw_length, digest);
     for (int i = 0, match_count = 0; i < SHA_DIGEST_LENGTH; i++) {
       if (hash[i] == digest[i]) match_count++;
-      if (match_count == SHA_DIGEST_LENGTH) cout << "matched password: " << symbols << endl;
+      if (match_count == SHA_DIGEST_LENGTH) cout << "matched password: " << psw << endl;
     }
+
     PassQuantity++;
-  } while (next_permutation(symbols, symbols + length));
+  } while (NextSet(a, set_length, psw_length));
 
   cout << endl << "total passwords: " << PassQuantity << endl;
-  delete[] digest;
+  delete [] digest;
+  delete [] a;
 }
 
 
@@ -37,12 +62,14 @@ int main(int argc, char *argv[])
   }
 
   double t = clock();
-  int length = atoi(argv[2]);
 
   char *buf = new char[SHA_DIGEST_LENGTH * 2];
   int hash[SHA_DIGEST_LENGTH];
   cout << "hash: ";
   cin >> buf;
+
+  int set_length = strlen(argv[1]);
+  int psw_length = atoi(argv[2]);
 
   char hash_part[2];
   for (int i = 0, j = 0; j < SHA_DIGEST_LENGTH * 2; i++, j += 2) {
@@ -51,10 +78,10 @@ int main(int argc, char *argv[])
     hash[i] = strtol(hash_part, NULL, 16);
   }
 
-  char *symbols = new char[length];
+  char *symbols = new char[set_length];
   strcpy(symbols, argv[1]);
 
-  PasswGenerate(symbols, length, hash);
+  PasswGenerate(symbols, set_length, psw_length, hash);
 
   t = (clock() - t) / CLOCKS_PER_SEC;
   cout << "time: " << t << endl;
