@@ -83,7 +83,7 @@ void PasswGenerate_parallel(int *lb, int *ub, char *symbols, int set_length, int
   MPI_Comm_size(MPI_COMM_WORLD, &commsize);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  char *psw = new char[psw_length];
+  unsigned char psw[psw_length] = "";
   psw[psw_length] = '\0';
   unsigned char *digest = new unsigned char[SHA_DIGEST_LENGTH];
   unsigned long PassQuantity = 0;
@@ -99,7 +99,7 @@ void PasswGenerate_parallel(int *lb, int *ub, char *symbols, int set_length, int
     if (match_count == psw_length) ub_reached = true;
 
     for (int i = 0; i < psw_length; i++) psw[i] = symbols[lb[i] - 1];
-    SHA1((unsigned char *) psw, psw_length, digest);
+    SHA1(psw, psw_length, digest);
     for (int i = 0, match_count = 0; i < SHA_DIGEST_LENGTH; i++) {
       if (hash[i] == digest[i]) match_count++;
       if (match_count == SHA_DIGEST_LENGTH) {
@@ -111,11 +111,10 @@ void PasswGenerate_parallel(int *lb, int *ub, char *symbols, int set_length, int
     PassQuantity++;
   } while (NextSet(lb, set_length, psw_length) && (ub_reached != true));
 
-  //cout << "Passw: " << PassQuantity << endl;
+  cout << "Passw: " << PassQuantity << endl;
   MPI_Reduce(&collisions, &collisions_total, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if (rank == 0) cout << endl << "total collisions: " << collisions_total << endl;
-  delete [] psw;
   delete [] digest;
 }
 
@@ -149,7 +148,7 @@ int main(int argc, char *argv[])
   strcpy(buf, argv[3]);
   int hash[SHA_DIGEST_LENGTH];
 
-  char hash_part[2];
+  char hash_part[2] = "";
   for (int i = 0, j = 0; j < SHA_DIGEST_LENGTH * 2; i++, j += 2) {
     hash_part[0] = buf[j];
     hash_part[1] = buf[j + 1];
