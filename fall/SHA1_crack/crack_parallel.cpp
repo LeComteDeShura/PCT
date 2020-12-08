@@ -86,7 +86,7 @@ void PasswGenerate_parallel(int *lb, int *ub, char *symbols, int set_length, int
   char *psw = new char[psw_length];
   psw[psw_length] = '\0';
   unsigned char *digest = new unsigned char[SHA_DIGEST_LENGTH];
-  long int PassQuantity = 0;
+  unsigned long PassQuantity = 0;
   int collisions = 0;
   int collisions_total = 0;
   bool ub_reached = false;
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 
   int set_length = strlen(argv[1]);
   int psw_length = atoi(argv[2]);
-  long int total_passwords = pow(set_length, psw_length);
+  unsigned long total_passwords = pow(set_length, psw_length);
 
 
   if (total_passwords < commsize) {
@@ -166,9 +166,9 @@ int main(int argc, char *argv[])
   strcpy(set_sorted, argv[1]);
   sort(set_sorted, set_sorted + set_length);
 
-  long int items_per_proc = total_passwords / commsize;
-  long int lb = (rank > 0) ? rank * items_per_proc : 0;
-  long int ub = (rank == commsize - 1) ? (total_passwords - 1) : (lb + items_per_proc - 1);
+  unsigned long items_per_proc = total_passwords / commsize;
+  unsigned long lb = (rank > 0) ? rank * items_per_proc : 0;
+  unsigned long ub = (rank == commsize - 1) ? (total_passwords - 1) : (lb + items_per_proc - 1);
   ithPermutation(perm_lb, set_length, psw_length, lb);
   ithPermutation(perm_ub, set_length, psw_length, ub);
 

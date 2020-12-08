@@ -35,7 +35,7 @@ void PasswGenerate(char *symbols, int set_length, int psw_length, int *hash)
   char *psw = new char[psw_length];
 
   for (int i = 0; i < psw_length; i++) a[i] = 1;
-  long int PassQuantity = 0;
+  unsigned long PassQuantity = 0;
 
   do {
     for (int i = 0; i < psw_length; i++) psw[i] = symbols[a[i] - 1];
