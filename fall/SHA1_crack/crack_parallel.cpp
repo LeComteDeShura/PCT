@@ -38,7 +38,7 @@ void ithPermutation(int *perm, int set_length, int psw_length, int n)
   for (int i = 0; i < strlen(num); i++) {
     char k = num[i];
     if (num[i] >= 'A' && num[i] <= 'Z')
-      perm[i] = strtol(&k, NULL, 16);
+      perm[i] = strtol(&k, NULL, set_length);
     else
       perm[i] = strtol(&k, NULL, 10);
   }
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
   ithPermutation(perm_lb, set_length, psw_length, lb);
   ithPermutation(perm_ub, set_length, psw_length, ub);
 
-  PasswGenerate_parallel(perm_lb, perm_ub, argv[1], set_length, psw_length, hash);
+  PasswGenerate_parallel(perm_lb, perm_ub, set_sorted, set_length, psw_length, hash);
   t = MPI_Wtime() - t;
 
   double time_global;
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 
   delete [] buf;
   delete [] set_sorted;
-  
+
   MPI_Finalize();
   return 0;
 }
