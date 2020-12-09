@@ -83,7 +83,7 @@ void PasswGenerate_parallel(int *lb, int *ub, char *symbols, int set_length, int
   MPI_Comm_size(MPI_COMM_WORLD, &commsize);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  unsigned char psw[psw_length] = "";
+  unsigned char psw[psw_length + 1];
   psw[psw_length] = '\0';
   unsigned char *digest = new unsigned char[SHA_DIGEST_LENGTH];
   unsigned long PassQuantity = 0;
@@ -111,7 +111,7 @@ void PasswGenerate_parallel(int *lb, int *ub, char *symbols, int set_length, int
     PassQuantity++;
   } while (NextSet(lb, set_length, psw_length) && (ub_reached != true));
 
-  cout << "Passw: " << PassQuantity << endl;
+  //cout << "Passw: " << PassQuantity << endl;
   MPI_Reduce(&collisions, &collisions_total, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if (rank == 0) cout << endl << "total collisions: " << collisions_total << endl;
