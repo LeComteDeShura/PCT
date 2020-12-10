@@ -20,7 +20,7 @@ set xtics 8
 set rmargin 4
 set tmargin 2
 plot "linear.dat" using 1:2 title "Линейное ускорение" with linespoints ls 1,\
-"10.dat" using 1:2 title "n = 10" with linespoints ls 2,\
-"11.dat" using 1:2 title "n = 11" with linespoints ls 3,\
-"12.dat" using 1:2 title "n = 12" with linespoints ls 4,\
-"13.dat" using 1:2 title "n = 13" with linespoints ls 5
+"10.dat" using 1:2 title "n = m = 10" with linespoints ls 2,\
+"11.dat" using 1:2 title "n = m = 11" with linespoints ls 3,\
+"12.dat" using 1:2 title "n = m = 12" with linespoints ls 4,\
+"13.dat" using 1:2 title "n = m = 13" with linespoints ls 5
