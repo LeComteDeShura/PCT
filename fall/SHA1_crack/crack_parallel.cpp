@@ -36,11 +36,13 @@ void ithPermutation(int *perm, int set_length, int psw_length, int n)
 
   // Запись числа в perm
   for (int i = 0; i < strlen(num); i++) {
-    char k = num[i];
-    if (num[i] >= 'A' && num[i] <= 'Z')
-      perm[i] = strtol(&k, NULL, set_length);
+    char k[2];
+    k[0] = num[i];
+    k[1] = '\0';
+    if (num[i] >= 'A' && num[i] <= 'z')
+      perm[i] = strtol(k, NULL, set_length);
     else
-      perm[i] = strtol(&k, NULL, 10);
+      perm[i] = strtol(k, NULL, 10);
   }
 
   // Сдвиг массива на strlen(num) элементов вправо, чтобы можно было записать незначащие нули
